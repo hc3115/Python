@@ -1,0 +1,114 @@
+#select .wav file, read and plot
+#calculate Fourier Transform and display absolute value 0-500 Hz
+
+#from tkinter import Tk
+#from Tkinter import tkFileDialog
+import tkinter as tk
+#import askopenfilename
+from tkinter import filedialog
+from scipy.io.wavfile import read
+import numpy as np
+import matplotlib.pyplot as plt
+
+#there was a problem here where the pop up window was appearing behind the IDE rather than infront. This function solves the problem.
+
+def select_file():
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    
+    return filedialog.askopenfilename(parent=root)
+
+filename=select_file()
+
+# read audio samples
+input_data = read(filename)
+signal = input_data[1]
+sampling_freq = input_data[0]
+time = np.arange(len(signal))/float(sampling_freq)
+
+#def find_nearest(array, value):
+#    array = np.asarray(array)
+#    idx = (np.abs(array - value)).argmin()
+#    return array[idx]
+
+def plot_data(start_time,end_time):
+    #function to plot data between start_time and end_time
+    
+    time_index1 = time.tolist().index(start_time)
+    time_index2 = time.tolist().index(end_time)
+    plt.figure()
+    plt.plot(time[time_index1:time_index2+1],signal[time_index1:time_index2+1])
+    plt.ylabel("Amplitude [a.u.]")
+    plt.xlabel("Time (s)")
+    plt.title("Recorded Signal")
+    plt.show()
+
+def plot_filtered_data(start_time,end_time):
+    #function to plot data between start_time and end_time
+    
+    time_index1 = time.tolist().index(start_time)
+    time_index2 = time.tolist().index(end_time)
+#    filtered_signal[time_index1:time_index1+100]=0
+    plt.figure()
+    plt.plot(time[time_index1:time_index2+1],filtered_signal[time_index1:time_index2+1])
+    plt.ylabel("Amplitude [a.u.]")
+    plt.xlabel("Time (s)")
+    plt.title("Recorded Signal")
+    plt.show()
+    
+#    pd = PeakDetect(filtered_signal[time_index1:time_index2+1])
+#    ind = pd.find()
+    
+#    plt.figure()
+#    plt.plot(time[time_index1:time_index2+1],ind)
+#    plt.ylabel("Amplitude [a.u.]")
+#    plt.xlabel("Time (s)")
+#    plt.title("Recorded Signal")
+#    plt.show()
+
+def FT_data(data,sampling_rate,j):
+    #function to calcuate and display absolute value of Fourier Transform
+    
+    freq = 0.5 * sampling_rate * np.linspace(-1.0, 1.0, len(data))
+    FTdata = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
+    
+#    freq_index1 = np.amin(np.where(freq >= -1000))
+#    freq_index2 = np.amin(np.where(freq >= 1000))
+    
+    a=np.amin(np.where(FTdata == np.amax(FTdata)))
+    b=np.amin(np.where(FTdata == np.amax(FTdata[0:np.amin(np.where(freq >= 0))+1])))
+    c=freq[a]
+    d=freq[b]
+#    e=np.amin(np.where(freq[freq_index1:freq_index2+1] == find_nearest(freq[freq_index1:freq_index2+1],1*c)))
+#    f=np.amin(np.where(freq[freq_index1:freq_index2+1] == find_nearest(freq[freq_index1:freq_index2+1],1*d)))
+#    print(freq[freq_index1])
+    
+    for i in range(len(FTdata)):
+        if freq[i]>=j*c-50 and freq[i]<=j*c+50:
+            continue
+        elif freq[i]>=j*d-50 and freq[i]<=j*d+50:
+            continue
+        else:
+            FTdata[i]=0
+    
+    global filtered_signal
+    filtered_signal = np.fft.ifftshift(np.fft.ifft(np.fft.ifftshift(FTdata)))
+    
+    plt.figure()
+    #plt.plot(freq[freq_index1:freq_index2+1],abs(FTdata[freq_index1:freq_index2+1]))
+    plt.plot(freq,abs(FTdata))
+    plt.ylabel("Magnitude [a.u.]")
+    plt.xlabel("Frequency (Hz)")
+    plt.title("Absolute Value of Fourier Transform")
+    plt.show()
+            
+#    with open('2ndHarmonic.csv', 'w') as f:
+#        writer = csv.writer(f, delimiter=',')
+#        writer.writerows(zip(freq[freq_index1:freq_index2+1],abs(FTdata[freq_index1:freq_index2+1])))
+        
+
+plot_data(0,9) #plot signal in time window defined by 2 values
+for i in range(10):
+    FT_data(signal,sampling_freq,i+1)
+    plot_filtered_data(0,9)
